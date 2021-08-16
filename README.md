@@ -33,8 +33,10 @@ folder_1
     --child_folder_4  
       --file_2.avi  
 ```
-You'll get the torrent hash (let's say it's XPTO) and call the script like this:  
+You'll get the torrent hash (let's say it's XPTO) and call the script like this: 
+```
 qbit_automatch.py --hash XPTO --search_dir "D:\organized_folder"  
-The script will automacally point the torrent to the proper folder and files.  
+```
+The script will automatically point the torrent to the proper folder and files.  
 You still have to recheck the torrent in qbitorrent for now.  
 
