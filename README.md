@@ -19,16 +19,20 @@ A fastresume bkp file will be saved for the first run
 
 ### Example:
 Say you have this structure on your disk:  
+```
 D:\organized_folder  
     --renamed_file_1.mkv  
     --renamed_file_2.avi  
+```
 But you want to seed those files in a torrent that's organized like this:  
+```
 folder_1  
   --child_folder_2  
     --file_1.mkv  
   --child_folder_3  
     --child_folder_4  
       --file_2.avi  
+```
 You'll get the torrent hash (let's say it's XPTO) and call the script like this:  
 qbit_automatch.py --hash XPTO --search_dir "D:\organized_folder"  
 The script will automacally point the torrent to the proper folder and files.  
