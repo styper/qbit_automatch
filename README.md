@@ -6,8 +6,8 @@ The script uses length in bytes and extension to match the files, torrent files 
 
 ### Dependencies:
 
-[bencode.py](https://github.com/fuzeman/bencode.py)
-[psutil](https://github.com/giampaolo/psutil)
+[bencode.py](https://github.com/fuzeman/bencode.py)  
+[psutil](https://github.com/giampaolo/psutil)  
 
 ```
 python -m pip install bencode.py psutil
