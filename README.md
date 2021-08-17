@@ -31,7 +31,7 @@ optional arguments:
   --search_dir SEARCH_DIR
                         Directory where the renamed files are
   --bt_backup BT_BACKUP
-                        BT_backup location, defaults to: C:\Users\Erick\AppData\Local\qBittorrent\BT_backup
+                        BT_backup location, defaults to: C:\Users\<username>\AppData\Local\qBittorrent\BT_backup
 ```
 
 Windows:
