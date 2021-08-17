@@ -43,14 +43,14 @@ Linux/OS X:
 python3 qbit_automatch.py --hash HASH --search_dir SEARCH_DIR
 ```
 hash: Torrent hash. Can be obtained in qBittorrent UI by: Right Click Torrent -> Copy -> Hash  
-Search_dir: the absolute path of the root folder of the files which are already on the disk
-bt_backup: If your qBittorrent/BT_backup is not in the default location then you can use the parameter --bt_backup and pass the correct absolute path
+search_dir: the absolute path of the root folder of the files which are already on the disk
+bt_backup: If your qBittorrent/BT_backup is not in the default location then you can use the parameter --bt_backup and pass the correct absolute path  
 
 ### What it does:
 Opens the torrent file  
 Searches the provided dir for matches in size and extension  
-If all files have a match, updates qBittorrent <hash>.fastresume file with the new paths
-A <hash>.fastresume.bkp file will be created in the first run
+If all files have a match, updates qBittorrent <hash>.fastresume file with the new paths  
+A <hash>.fastresume.bkp file will be created in the first run  
 
 ### Example:
 Say you have this structure on your disk:  
@@ -70,7 +70,7 @@ folder_1
 ```
 You'll get the torrent hash (let's say it's XPTO) and call the script like this: 
 ```
-py qbit_automatch.py --hash XPTO --search_dir "D:\organized_folder"  
+py qbit_automatch.py --hash XPTO --search_dir "D:\organized_folder"
 ```
 The script will automatically point the torrent to the proper folder and files.  
 You still have to recheck the torrent in qbitorrent for now.  
