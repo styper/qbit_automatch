@@ -42,9 +42,9 @@ Linux/OS X:
 ```
 python3 qbit_automatch.py --hash HASH --search_dir SEARCH_DIR
 ```
-⋅⋅hash: Torrent hash. Can be obtained in qBittorrent UI by: Right Click Torrent -> Copy -> Hash  
-⋅⋅search_dir: the absolute path of the root folder of the files which are already on the disk  
-⋅⋅bt_backup: If your qBittorrent/BT_backup is not in the default location then you can use the parameter --bt_backup and pass the correct absolute path  
+⋅⋅* hash: Torrent hash. Can be obtained in qBittorrent UI by: Right Click Torrent -> Copy -> Hash  
+⋅⋅* search_dir: the absolute path of the root folder of the files which are already on the disk  
+⋅⋅* bt_backup: If your qBittorrent/BT_backup is not in the default location then you can use the parameter --bt_backup and pass the correct absolute path  
 
 ### What it does:
 Opens the torrent file  
