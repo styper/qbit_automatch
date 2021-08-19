@@ -15,6 +15,12 @@ try:
 except ModuleNotFoundError:
     raise SystemExit('Error: The psutil module is needed, you can install it with this command: python -m pip install psutil')
 
+try:
+    from rapidfuzz import process
+    from rapidfuzz.string_metric import levenshtein
+except ModuleNotFoundError:
+    raise SystemExit('Error: The rapidfuzz module is needed, you can install it with this command: python -m pip install rapidfuzz')
+
 def get_bt_backup_default():
     if sys.platform == "win32":
         return os.path.join(os.getenv('LOCALAPPDATA'), 'qBittorrent', 'BT_backup')
@@ -34,33 +40,63 @@ def check_process_running(processName):
             pass
     return False;
 
+def yes_or_no(question):
+    reply = str(input(question+' (y/n): ')).lower().strip()
+    if reply[0] == 'y':
+        return True
+    if reply[0] == 'n':
+        return False
+    else:
+        return yes_or_no(question)
+
 def cache_search_dir(search_dir):
     search_dir_cache=[]
-    os_root=os.path.basename(search_dir)
     for root, subdirs, files in os.walk(search_dir):
         for os_filename in files:
             os_file_extension = os.path.splitext(os_filename)[1]
             os_file_length=os.path.getsize(os.path.join(root, os_filename))
             os_relpath=os.path.relpath(root, search_dir)
-            if os_relpath == '.':
-                root_relpath=os.path.join(os_root, os_filename)
-            else:
-                root_relpath=os.path.join(os_root, os_relpath, os_filename)
-            search_dir_cache.append({'filename':os_filename, 'extension':os_file_extension, 'length':os_file_length, 'relpath':root_relpath})
+            search_dir_cache.append({'absolute_path':os.path.join(search_dir, root, os_filename), 'filename':os_filename, 'extension':os_file_extension, 'length':os_file_length})
     return search_dir_cache
 
 def find_file(search_dir_cache, file_length, file_extension, filename):
+    files=[]
     for i in search_dir_cache:
         if (file_length == i['length'] and
             file_extension == i['extension']):
-            return i['relpath']
-    raise FileNotFoundError('File ' + filename + ' not found!')
+            files.append(i['absolute_path'])
+    return files
 
-#Parse input
-parser=argparse.ArgumentParser()
-parser.add_argument('--hash', help='Torrent hash')
-parser.add_argument('--search_dir', help='Directory where the renamed files are')
-parser.add_argument('--bt_backup', default=get_bt_backup_default(), help='BT_backup location, defaults to: ' + get_bt_backup_default())
+def update_fastresume(qBt_savePath, mapped_files):
+    #Fetch the fastresume file data
+    with open(fastresume_path, 'rb') as fd:
+        fastresume_data = bencode.decode(fd.read())
+    #update the root save path and files
+    fastresume_data_upd=fastresume_data.copy()
+    fastresume_data_upd['qBt-savePath']=qBt_savePath
+    fastresume_data_upd['save_path']=qBt_savePath
+    fastresume_data_upd['mapped_files']=mapped_files
+    fastresume_data_upd['paused']=1
+    if fastresume_data == fastresume_data_upd:
+        print('Info: Fastresume data matches already, no changes made')
+        exit(0)
+    if check_process_running('qbittorrent'):
+        raise SystemExit('Error: qBittorrent is running, close it first')
+    #backup the original fastresume file if bkp doesnt exists
+    if not os.path.isfile(fastresume_bkp_path):
+        copyfile(fastresume_path, fastresume_bkp_path)
+    #write the changed file to disk
+    with open(fastresume_path, 'wb') as fd:
+        fd.write(bencode.encode(fastresume_data_upd))
+
+parser=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+optional = parser._action_groups.pop()
+required = parser.add_argument_group('required arguments')
+parser._action_groups.append(optional)
+required.add_argument('--hash', help='Torrent hash. In qBittorrent right click the torrent -> copy -> hash', required=True)
+required.add_argument('--search_dir', metavar='PATH', help='Where to search for the files. Must be an absolute path', required=True)
+optional.add_argument('--bt_backup', metavar='PATH', default=get_bt_backup_default(), help='BT_backup location, defaults to:\nWindows: C:\\Users\\<username>\\AppData\\Local\\qBittorrent\\BT_backup\nLinux: /home/<username>/.local/share/data/qBittorrent/BT_backup\nOS X: /Users/<username/Library/ApplicationSupport/qBittorrent/BT_backup')
+optional.add_argument('--fix_duplicates', metavar='N', default=0, help='Values:\n0: throw an error when duplicates are found\n1: be prompted to choose files when duplicates are found\n2: use fuzzy string matching and choose files automatically\n3: use fuzzy string matching and choose files automatically but be prompted before proceeding\nDefaults to 0')
 args=parser.parse_args()
 
 #Validate input
@@ -70,9 +106,7 @@ if not os.path.isdir(args.search_dir):
 if not os.path.isdir(args.bt_backup):
     raise SystemExit('Error: ' + args.bt_backup + ' is not a valid dir. Try calling the script with --bt_backup parameter and the correct path')
 
-qBt_savePath=str(Path(args.search_dir).parent.absolute())
 bt_backup=args.bt_backup
-mapped_files=[]
 torrent_path=os.path.join(bt_backup, args.hash + '.torrent')
 fastresume_path=os.path.join(bt_backup, args.hash + '.fastresume')
 fastresume_bkp_path=fastresume_path + '.bkp'
@@ -80,48 +114,82 @@ fastresume_bkp_path=fastresume_path + '.bkp'
 print('hash..........: ' + args.hash)
 print('search_dir....: ' + args.search_dir)
 print('BT_backup.....: ' + bt_backup)
-print('qBt_savePath..: ' + qBt_savePath)
 print('torrent.......: ' + torrent_path)
 print('fastresume....: ' + fastresume_path)
 print('fastresume_bkp: ' + fastresume_bkp_path)
 
+#Cache the search_dir
 search_dir_cache=cache_search_dir(args.search_dir)
 
 #Parse torrent file and search the lenghts and extension in the search_dir
+searched_files=[]
 with open(torrent_path, 'rb') as fd:
     torrent_data = bencode.decode(fd.read())
     for td_file in torrent_data['info']['files']:
         td_filename, td_file_extension = os.path.splitext(td_file['path'][-1])
         td_file_length=int(td_file['length'])
-        found_file=find_file(search_dir_cache, td_file_length, td_file_extension, td_filename)
-        mapped_files.append(found_file)
+        result=find_file(search_dir_cache, td_file_length, td_file_extension, td_file['path'][-1])
+        searched_files.append({'searched':os.sep.join(td_file['path']), 'result':result})
 
-#Check for duplicates
-if len(mapped_files) != len(set(mapped_files)):
-    #Uncomment to see files that were matched more than once
-    #print([item for item, count in collections.Counter(mapped_files).items() if count > 1])
-    raise SystemExit('Error: duplicates found, aborting')
+#Check if some files haven't been found
+not_found_abort=False
+for i in searched_files:
+    if not i['result']:
+        print('File not found: ' + i['searched'])
+        not_found_abort=True
+if not_found_abort:
+    raise SystemExit('Error: This is script only works if all files are accounted for within the search_dir')
 
-#Fetch the fastresume file data
-with open(fastresume_path, 'rb') as fd:
-    fastresume_data = bencode.decode(fd.read())
+#Check if a file has duplicates
+duplicate_abort=False
+for i in searched_files:
+    if len(i['result']) > 1:
+        if args.fix_duplicates == '1':
+            print('File "' + i['searched'] + '" has the following duplicates. Input which is the correct one by entering the number:')
+        else:
+            print('File "' + i['searched'] + '" has the following duplicates:')
+        for idx, val in enumerate(i['result']):
+            print(' [' + str(idx) + '] ' + val)
+            duplicate_abort=True
+        if args.fix_duplicates in ['2','3']:
+            cache_result=process.extractOne(i['searched'], i['result'], scorer=levenshtein)[0]
+            i['result'] = []
+            i['result'].append(cache_result)
+            print('Fuzzy match: ' + cache_result)
+        elif args.fix_duplicates == '1':
+            while True:
+                try:
+                    user_input=int(input("Enter your value: "))
+                    cache_result=i['result'][user_input]
+                    i['result'] = []
+                    i['result'].append(cache_result)
+                    break
+                except (IndexError,TypeError,ValueError) as e:
+                    pass
+if duplicate_abort and args.fix_duplicates not in ['1','2','3']:
+    raise SystemExit('Error: duplicates found. This happens when 2 files have the same length and extension. You can run the script with --fix_duplicates to fix them. Check the help for possible values')
+if duplicate_abort and args.fix_duplicates in ['3']:
+    if not yes_or_no('Continue?'):
+        exit(0)
 
-fastresume_data_upd=fastresume_data.copy()
-fastresume_data_upd['qBt-savePath']=qBt_savePath
-fastresume_data_upd['save_path']=qBt_savePath
-fastresume_data_upd['mapped_files']=mapped_files
-if fastresume_data == fastresume_data_upd:
-    print('Info: Fastresume data matches already, no changes made')
-    exit(0)
+#extract the paths
+searched_paths=[]
+for i in searched_files:
+    searched_paths.append(i['result'][0])
 
-if check_process_running('qbittorrent'):
-    raise SystemExit('Error: qBittorrent is running, close it first')
+if len(searched_paths) != len(set(searched_paths)):
+    raise SystemExit('Error: There are duplicates in the values')
 
-#backup the original fastresume file if bkp doesnt exists
-if not os.path.isfile(fastresume_bkp_path):
-    copyfile(fastresume_path, fastresume_bkp_path)
+#Get the common path of all files and set the mapped_files as the relative path to the common path
+mapped_files=[]
+qBt_savePath=str(Path(os.path.commonpath(searched_paths)).parent)
+for file_path in searched_paths:
+    relpath=os.path.relpath(file_path, qBt_savePath)
+    mapped_files.append(relpath)
 
-with open(fastresume_path, 'wb') as fd:
-    fd.write(bencode.encode(fastresume_data_upd))
+print('qBt_savePath..: ' + qBt_savePath)
 
-print('Done')
+#Updates qBittorrent fastresume file
+update_fastresume(qBt_savePath, mapped_files)
+
+print('Updated fasresume file')
