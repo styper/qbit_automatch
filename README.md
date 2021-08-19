@@ -3,6 +3,7 @@
 ### Description:
 Script to match torrent files with renamed files, then updating qBittorrent accordingly.  
 The script uses length in bytes and extension to match the files, torrent files don't have individual file hashes so this is what I could do.  
+All the torrent files must have a match in the search dir, otherwise the script will fail.
 
 ### Dependencies:
 
