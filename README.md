@@ -25,24 +25,28 @@ pip install bencode.py psutil rapidfuzz
 
 ### Usage:
 ```
-usage: qbit_automatch.py [-h] --hash HASH --search_dir PATH [--bt_backup PATH] [--fix_duplicates N]
+usage: qbit_automatch.py [-h] -a HASH -s PATH [-b PATH] [-f N] [-d]
 
 required arguments:
-  --hash HASH         Torrent hash. In qBittorrent right click the torrent -> copy -> hash
-  --search_dir PATH   Where to search for the files. Must be an absolute path
+  -a HASH, --hash HASH  Torrent hash. In qBittorrent right click the torrent -> copy -> hash
+  -s PATH, --search_dir PATH
+                        Where to search for the files. Must be an absolute path
 
 optional arguments:
-  -h, --help          show this help message and exit
-  --bt_backup PATH    BT_backup location, defaults to:
-                      Windows: C:\Users\<username>\AppData\Local\qBittorrent\BT_backup
-                      Linux: /home/<username>/.local/share/data/qBittorrent/BT_backup
-                      OS X: /Users/<username/Library/ApplicationSupport/qBittorrent/BT_backup
-  --fix_duplicates N  Values:
-                      0: throw an error when duplicates are found
-                      1: be prompted to choose files when duplicates are found
-                      2: use fuzzy string matching and choose files automatically
-                      3: use fuzzy string matching and choose files automatically but be prompted before proceeding
-                      Defaults to 0
+  -h, --help            show this help message and exit
+  -b PATH, --bt_backup PATH
+                        BT_backup location, defaults to:
+                        Windows: C:\Users\<username>\AppData\Local\qBittorrent\BT_backup
+                        Linux: /home/<username>/.local/share/data/qBittorrent/BT_backup
+                        OS X: /Users/<username/Library/ApplicationSupport/qBittorrent/BT_backup
+  -f N, --fix_duplicates N
+                        Values:
+                        0: throw an error when duplicates are found
+                        1: be prompted to choose files when duplicates are found
+                        2: use fuzzy string matching and choose files automatically
+                        3: use fuzzy string matching and choose files automatically but be prompted before proceeding
+                        Defaults to 0
+  -d, --debug           Enable debug
 ```
 
 Windows:
