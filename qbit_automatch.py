@@ -56,7 +56,7 @@ def cache_search_dir(search_dir):
             os_file_extension = os.path.splitext(os_filename)[1]
             os_file_length=os.path.getsize(os.path.join(root, os_filename))
             os_relpath=os.path.relpath(root, search_dir)
-            search_dir_cache.append({'absolute_path':os.path.join(search_dir, root, os_filename), 'filename':os_filename, 'extension':os_file_extension, 'length':os_file_length})
+            search_dir_cache.append({'absolute_path':os.path.join(search_dir, root, os_filename), 'extension':os_file_extension, 'length':os_file_length})
     return search_dir_cache
 
 def find_file(search_dir_cache, file_length, file_extension, filename):
@@ -93,10 +93,11 @@ parser=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 optional = parser._action_groups.pop()
 required = parser.add_argument_group('required arguments')
 parser._action_groups.append(optional)
-required.add_argument('--hash', help='Torrent hash. In qBittorrent right click the torrent -> copy -> hash', required=True)
-required.add_argument('--search_dir', metavar='PATH', help='Where to search for the files. Must be an absolute path', required=True)
-optional.add_argument('--bt_backup', metavar='PATH', default=get_bt_backup_default(), help='BT_backup location, defaults to:\nWindows: C:\\Users\\<username>\\AppData\\Local\\qBittorrent\\BT_backup\nLinux: /home/<username>/.local/share/data/qBittorrent/BT_backup\nOS X: /Users/<username/Library/ApplicationSupport/qBittorrent/BT_backup')
-optional.add_argument('--fix_duplicates', metavar='N', default=0, help='Values:\n0: throw an error when duplicates are found\n1: be prompted to choose files when duplicates are found\n2: use fuzzy string matching and choose files automatically\n3: use fuzzy string matching and choose files automatically but be prompted before proceeding\nDefaults to 0')
+required.add_argument('-a', '--hash', help='Torrent hash. In qBittorrent right click the torrent -> copy -> hash', required=True)
+required.add_argument('-s', '--search_dir', metavar='PATH', help='Where to search for the files. Must be an absolute path', required=True)
+optional.add_argument('-b', '--bt_backup', metavar='PATH', default=get_bt_backup_default(), help='BT_backup location, defaults to:\nWindows: C:\\Users\\<username>\\AppData\\Local\\qBittorrent\\BT_backup\nLinux: /home/<username>/.local/share/data/qBittorrent/BT_backup\nOS X: /Users/<username/Library/ApplicationSupport/qBittorrent/BT_backup')
+optional.add_argument('-f', '--fix_duplicates', metavar='N', default=0, help='Values:\n0: throw an error when duplicates are found\n1: be prompted to choose files when duplicates are found\n2: use fuzzy string matching and choose files automatically\n3: use fuzzy string matching and choose files automatically but be prompted before proceeding\nDefaults to 0')
+optional.add_argument('-d', '--debug', action='store_true', help='Enable debug')
 args=parser.parse_args()
 
 #Validate input
@@ -111,12 +112,12 @@ torrent_path=os.path.join(bt_backup, args.hash + '.torrent')
 fastresume_path=os.path.join(bt_backup, args.hash + '.fastresume')
 fastresume_bkp_path=fastresume_path + '.bkp'
 
-print('hash..........: ' + args.hash)
-print('search_dir....: ' + args.search_dir)
-print('BT_backup.....: ' + bt_backup)
-print('torrent.......: ' + torrent_path)
-print('fastresume....: ' + fastresume_path)
-print('fastresume_bkp: ' + fastresume_bkp_path)
+if args.debug: print('hash..........: ' + args.hash)
+if args.debug: print('search_dir....: ' + args.search_dir)
+if args.debug: print('BT_backup.....: ' + bt_backup)
+if args.debug: print('torrent.......: ' + torrent_path)
+if args.debug: print('fastresume....: ' + fastresume_path)
+if args.debug: print('fastresume_bkp: ' + fastresume_bkp_path)
 
 #Cache the search_dir
 search_dir_cache=cache_search_dir(args.search_dir)
@@ -180,6 +181,8 @@ for i in searched_files:
 if len(searched_paths) != len(set(searched_paths)):
     raise SystemExit('Error: There are duplicates in the values')
 
+print('All files matched')
+
 #Get the common path of all files and set the mapped_files as the relative path to the common path
 mapped_files=[]
 qBt_savePath=str(Path(os.path.commonpath(searched_paths)).parent)
@@ -187,9 +190,10 @@ for file_path in searched_paths:
     relpath=os.path.relpath(file_path, qBt_savePath)
     mapped_files.append(relpath)
 
-print('qBt_savePath..: ' + qBt_savePath)
+if args.debug: print('qBt_savePath..: ' + qBt_savePath)
 
 #Updates qBittorrent fastresume file
 update_fastresume(qBt_savePath, mapped_files)
 
-print('Updated fasresume file')
+print('Updated fastresume file')
+print('Done')
