@@ -55,7 +55,7 @@ python3 qbit_automatch.py --hash HASH --search_dir SEARCH_DIR
 ```
 * hash: Torrent hash. Can be obtained in qBittorrent UI by: Right Click Torrent -> Copy -> Hash  
 * search_dir: the absolute path of the root folder of the files which are already on the disk  
-* bt_backup: If your qBittorrent/BT_backup is not in the default location then you can use the parameter --bt_backup and pass the correct absolute path  
+* bt_backup: If your qBittorrent/BT_backup is not in the default location then you can use this parameter and input the correct absolute path  
 * fix_duplicates: If the script is matching torrent files with more than one disk file you can use this option to fix it manually or use string matching to decide the correct file  
 
 ### What it does:
