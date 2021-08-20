@@ -59,10 +59,10 @@ python3 qbit_automatch.py --hash HASH --search_dir SEARCH_DIR
 * fix_duplicates: If the script is matching torrent files with more than one disk file you can use this option to fix it manually or use string matching to decide the correct file  
 
 ### What it does:
-Opens the torrent file  
-Searches the provided dir for matches in size and extension  
-If all files have a match, updates qBittorrent <hash>.fastresume file with the new paths  
-A <hash>.fastresume.bkp file will be created in the first run  
+1. Opens the torrent file  
+2. Searches the provided dir for matches in size and extension  
+3. If all files have a match, updates qBittorrent <hash>.fastresume file with the new paths  
+4. A <hash>.fastresume.bkp file will be created in the first run  
 
 ### Example:
 Say you have this structure on your disk:  
