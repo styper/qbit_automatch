@@ -1,6 +1,5 @@
 import argparse
 import os
-import collections
 import sys
 from shutil import copyfile
 from pathlib import Path
@@ -44,18 +43,17 @@ def yes_or_no(question):
     reply = str(input(question+' (y/n): ')).lower().strip()
     if reply[0] == 'y':
         return True
-    if reply[0] == 'n':
+    elif reply[0] == 'n':
         return False
     else:
         return yes_or_no(question)
 
 def cache_search_dir(search_dir):
     search_dir_cache=[]
-    for root, subdirs, files in os.walk(search_dir):
+    for root, files in os.walk(search_dir):
         for os_filename in files:
             os_file_extension = os.path.splitext(os_filename)[1]
             os_file_length=os.path.getsize(os.path.join(root, os_filename))
-            os_relpath=os.path.relpath(root, search_dir)
             search_dir_cache.append({'absolute_path':os.path.join(search_dir, root, os_filename), 'extension':os_file_extension, 'length':os_file_length})
     return search_dir_cache
 
@@ -112,12 +110,13 @@ torrent_path=os.path.join(bt_backup, args.hash + '.torrent')
 fastresume_path=os.path.join(bt_backup, args.hash + '.fastresume')
 fastresume_bkp_path=fastresume_path + '.bkp'
 
-if args.debug: print('hash..........: ' + args.hash)
-if args.debug: print('search_dir....: ' + args.search_dir)
-if args.debug: print('BT_backup.....: ' + bt_backup)
-if args.debug: print('torrent.......: ' + torrent_path)
-if args.debug: print('fastresume....: ' + fastresume_path)
-if args.debug: print('fastresume_bkp: ' + fastresume_bkp_path)
+if args.debug: 
+    print('hash..........: ' + args.hash)
+    print('search_dir....: ' + args.search_dir)
+    print('BT_backup.....: ' + bt_backup)
+    print('torrent.......: ' + torrent_path)
+    print('fastresume....: ' + fastresume_path)
+    print('fastresume_bkp: ' + fastresume_bkp_path)
 
 #Cache the search_dir
 search_dir_cache=cache_search_dir(args.search_dir)
