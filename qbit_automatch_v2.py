@@ -248,30 +248,46 @@ def main():
     check_python_version()
     input_args = parse_input()
     try:
-        if input_args.debug: print('DEBUG: input_args:' + json.dumps(vars(input_args), cls=ComplexEncoder, indent = 2))
-        if input_args.debug: print('DEBUG: Opening search dir and creating cache in tempfile')
+        if input_args.debug:
+            print('DEBUG: input_args:' + json.dumps(vars(input_args), cls=ComplexEncoder, indent = 2))
+            print('DEBUG: Opening search dir and creating cache in tempfile')
         search_dir = SearchDir(input_args.search_dir)
-        if input_args.debug: print('DEBUG: search_dir:' + json.dumps(search_dir, cls=ComplexEncoder, indent = 2))
-        if input_args.debug: print('DEBUG: Opening torrent file')
+
+        if input_args.debug:
+            print('DEBUG: search_dir:' + json.dumps(search_dir, cls=ComplexEncoder, indent = 2))
+            print('DEBUG: Opening torrent file')
         torrent_files = TorrentFiles(input_args.bt_backup, input_args.hash)
-        if input_args.debug: print('DEBUG: torrent_files:' + json.dumps(torrent_files, cls=ComplexEncoder, indent = 2))
-        if input_args.debug: print('DEBUG: Finding matches')
+
+        if input_args.debug:
+            print('DEBUG: torrent_files:' + json.dumps(torrent_files, cls=ComplexEncoder, indent = 2))
+            print('DEBUG: Finding matches')
         torrent_files.find_matches(search_dir)
-        if input_args.debug: print('DEBUG: After matches search')
-        if input_args.debug: print('DEBUG: torrent_files:' + json.dumps(torrent_files, cls=ComplexEncoder, indent = 2))
-        if input_args.debug: print('DEBUG: Checking if files have no matches')
+
+        if input_args.debug:
+            print('DEBUG: After matches search')
+            print('DEBUG: torrent_files:' + json.dumps(torrent_files, cls=ComplexEncoder, indent = 2))
+            print('DEBUG: Checking if files have no matches')
         torrent_files.check_unmatched()
-        if input_args.debug: print('DEBUG: Checking for multiple matches')
+
+        if input_args.debug:
+            print('DEBUG: Checking for multiple matches')
         torrent_files.resolve_multiple(input_args.fix_duplicates)
-        if input_args.debug: print('DEBUG: After multiple matches check')
-        if input_args.debug: print('DEBUG: torrent_files:' + json.dumps(torrent_files, cls=ComplexEncoder, indent = 2))
-        if input_args.debug: print('DEBUG: Checking if two torrent files point to the same disk file')
+
+        if input_args.debug:
+            print('DEBUG: After multiple matches check')
+            print('DEBUG: torrent_files:' + json.dumps(torrent_files, cls=ComplexEncoder, indent = 2))
+            print('DEBUG: Checking if two torrent files point to the same disk file')
         torrent_files.check_duplicates()
-        if input_args.debug: print('DEBUG: Finished checking files')
+
+        if input_args.debug:
+            print('DEBUG: Finished checking files')
         fastresume_file = FastresumeFile(input_args.bt_backup, input_args.hash, torrent_files)
-        if input_args.debug: print('DEBUG: fastresume_file:' + json.dumps(fastresume_file, cls=ComplexEncoder, indent = 2))
-        if input_args.debug: print('DEBUG: Updating fastresume file')
+
+        if input_args.debug:
+            print('DEBUG: fastresume_file:' + json.dumps(fastresume_file, cls=ComplexEncoder, indent = 2))
+            print('DEBUG: Updating fastresume file')
         fastresume_file.update_fastresume()
+
         print('INFO: Done')
     finally:
         try:
