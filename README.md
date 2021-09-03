@@ -7,7 +7,7 @@ All the torrent files must have a match in the search dir, otherwise the script 
 
 ### Dependencies:
 
-Python 2.7+ or 3.2+  
+Python 2.7+ or 3.2+ (according to [vermin](https://github.com/netromdk/vermin))  
 [bencode.py](https://github.com/fuzeman/bencode.py)  
 [psutil](https://github.com/giampaolo/psutil)  
 [rapidfuzz](https://github.com/maxbachmann/RapidFuzz)
