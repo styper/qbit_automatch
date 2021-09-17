@@ -109,6 +109,7 @@ class TorrentFiles(JSONSerializable):
         self.files = []
         with open(self.torrent_path, 'rb') as file_handle:
             torrent_data = bencode.decode(file_handle.read())
+            self.name = torrent_data['info']['name']
             if 'files' in torrent_data['info']:
                 for td_file in torrent_data['info']['files']:
                     self.files.append(FileInTorrent(td_file['path'], td_file['length']))
@@ -120,25 +121,32 @@ class TorrentFiles(JSONSerializable):
             if not file.matches:
                 abort = True
                 print('ERROR: File "' + file.path + '" has no matches')
-        if abort: raise SystemExit('FATAL: This is script only works if all files are accounted for within the search_dir')
+        if abort:
+            raise SystemExit('FATAL: This is script only works if all files are accounted for within the search_dir')
     def resolve_multiple(self, mode):
         dupicates_found = False
         for file_in_torrent in self.files:
             if file_in_torrent.get_matches_count() > 1:
                 dupicates_found = True
                 print('File "' + file_in_torrent.path + '" has the following duplicates:')
-                options = []
-                for seq_no, file_in_disk in enumerate(file_in_torrent.matches):
-                    options.append(seq_no)
-                    print(' [' + str(seq_no) + '] ' + file_in_disk.path)
+                matches_paths = []
+                for seq_no, x in enumerate(file_in_torrent.matches):
+                    matches_paths.append([str(seq_no), x.path])
+                fuzzymatch = process.extractOne(os.path.join(self.name, file_in_torrent.path), list(zip(*matches_paths))[1], scorer=levenshtein)[0]
+                best_match_seq_no = None
+                for seq_no, match in matches_paths:
+                    if fuzzymatch == match:
+                        print(' >[' + seq_no + '] ' + match)
+                        best_match_seq_no = seq_no
+                    else:
+                        print('  [' + seq_no + '] ' + match)
                 if mode == TorrentFiles.PROMPT:
-                    user_input = ask_user('Select one', options, ret_type = 'int')
+                    user_input = ask_user('Select one', list(zip(*matches_paths))[0], ret_type = 'int', default = best_match_seq_no)
                     file_in_torrent.set_single_match(file_in_torrent.matches[user_input])
                 elif mode in [TorrentFiles.FUZZY_AUTO, TorrentFiles.FUZZY_PROMPT]:
-                    matches_filenames = [x.path for x in file_in_torrent.matches]
-                    fuzzymatch = process.extractOne(file_in_torrent.path, matches_filenames, scorer=levenshtein)[0]
-                    print(' Fuzzy match: ' + fuzzymatch)
+                    print('  Fuzzy match: ' + fuzzymatch)
                     file_in_torrent.set_single_match(next(x for x in file_in_torrent.matches if x.path == fuzzymatch))
+                line_separator()
         if dupicates_found and mode == TorrentFiles.THROW_ERROR:
             raise SystemExit('FATAL: duplicates found. This happens when 2 files have the same length and extension. You can run the script with --fix_duplicates to fix them. Check the help for possible values')
         elif dupicates_found and mode == TorrentFiles.FUZZY_PROMPT:
@@ -150,13 +158,12 @@ class TorrentFiles(JSONSerializable):
         for file in self.files:
             temp_list.append(file.get_match().path)
         if len(temp_list) != len(set(temp_list)):
-            return True
-        return False
+            raise SystemExit('FATAL: Duplicates found. Two files can\'t have the same match')
     def find_matches(self, search_dir):
         for file_in_torrent in self.files:
             search_dir.search_file(file_in_torrent)
     def repr_json(self):
-        return {'torrent_path':self.torrent_path, 'files':self.files}
+        return {'name':self.name, 'torrent_path':self.torrent_path, 'files':self.files}
 
 class SearchDir(JSONSerializable):
     def __init__(self, search_dir):
@@ -200,14 +207,25 @@ class SHA1Hash(argparse.Action):
             raise SystemExit('FATAL: "' + input_hash + '" is not a valid hash, check --help')
         setattr(namespace,self.dest,input_hash)
 
-def ask_user(question, options, ret_type = 'str'):
+def ask_user(question, options, ret_type = 'str', default = None):
     options = list(map(str, options))
+    default = str(default)
+    q = question + ' (' 
+    for op in options:
+        if op == default:
+            q = q + '[' + op + ']/'
+        else:
+            q = q + op + '/'
+    q = q[:-1] + '): '
     response = ''
     while response.lower() not in options:
-        response = input(question + ' (' + '/'.join(options) + '): ')
+        response = input(q) or default
     if ret_type == 'int':
         return int(response)
     return response
+
+def line_separator():
+    print('-' * (os.get_terminal_size().columns - 1))
 
 def check_process_running(processName):
     #Iterate over the all the running process
@@ -257,6 +275,7 @@ def main():
             print('DEBUG: search_dir:' + json.dumps(search_dir, cls=ComplexEncoder, indent = 2))
             print('DEBUG: Opening torrent file')
         torrent_files = TorrentFiles(input_args.bt_backup, input_args.hash)
+        print('INFO: Torrent name: ' + torrent_files.name)
 
         if input_args.debug:
             print('DEBUG: torrent_files:' + json.dumps(torrent_files, cls=ComplexEncoder, indent = 2))
