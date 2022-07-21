@@ -89,6 +89,16 @@ def update_fastresume(qBt_savePath, mapped_files):
     with open(fastresume_path, 'wb') as fd:
         fd.write(bencode.encode(fastresume_data_upd))
 
+def rename_files(searched_files):
+    for file in input:
+        file_to_change = file["result"][0]
+        file_to_change_name = file_to_change.split("\\")[-1:][0]
+        file_location = file_to_change.replace(file_to_change_name,"")
+        file_new_name = file_location + file["searched"]
+        os.rename(f"{file_to_change}",f"{file_new_name}")
+    #todo1 - update the fast resume data after files are renamed so that file doesnt need to be rechecked.
+    #todo2 - rename parent folder also where required.
+    
 parser=argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 optional = parser._action_groups.pop()
 required = parser.add_argument_group('required arguments')
@@ -192,8 +202,19 @@ for file_path in searched_paths:
 
 if args.debug: print('qBt_savePath..: ' + qBt_savePath)
 
-#Updates qBittorrent fastresume file
-update_fastresume(qBt_savePath, mapped_files)
+files_or_fastresume = input("(1) Rename Files\n(2) Update fast resume data\n\nSelection:")
 
-print('Updated fastresume file')
-print('Done')
+#if rename files option is selected rename files
+if files_or_fastresume == "1":
+    rename_files(searched_files)
+    print("all files renamed")
+    
+#If update fast resume is selected, Updates qBittorrent fastresume file
+elif files_or_fastresume == "2":
+    update_fastresume(qBt_savePath, mapped_files)
+    print('Updated fastresume file')
+
+else:
+    print("incorrect selection")    
+
+    print('Done')
